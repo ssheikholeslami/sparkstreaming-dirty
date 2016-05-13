@@ -57,7 +57,7 @@ object RandomSamplingReservoir {
 
           //do probabilities here :D
           randomProbability = randomGenerator.nextFloat()
-          neededProbabilityForInclusion = reservoirSize/(elementCount+1)
+          neededProbabilityForInclusion = reservoirSize.toFloat/(elementCount+1)
 
           println("NEEEEDED " + neededProbabilityForInclusion)
 
