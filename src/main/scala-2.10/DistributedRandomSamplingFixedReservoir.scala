@@ -9,6 +9,8 @@ import org.apache.log4j.Level
 import java.util.Random
 
 object DistributedRandomSamplingFixedReservoir {
+  //FIXME overflow may happen, if the stream is very big!
+  var globalCount: Long = 0
 
   def main(args: Array[String]) {
     Logger.getLogger("org").setLevel(Level.OFF) //disable logging
@@ -20,6 +22,25 @@ object DistributedRandomSamplingFixedReservoir {
     //FIXME set master address from runtime arguments
     val conf = new SparkConf().setMaster("local[2]").setAppName("DistributedRandomSampling")
     val ssc = new StreamingContext(conf, Seconds(10)) // batch interval duration FIXME set from runtime arguments
+
+    val randomGenerator = new Random
+
+
+    //DStream receiving from localhost:9999
+    //FIXME set input source via SDMiner GUI
+
+    val stream = ssc.socketTextStream("localhost", 9999)
+
+    val indexedStream = stream.transform(rdd => rdd.zipWithUniqueId().mapValues( id => id + globalCount))
+
+    indexedStream.print()
+    indexedStream.foreachRDD{(rdd => globalCount += rdd.count())}
+
+
+
+    // to start the processing
+    ssc.start()
+    ssc.awaitTermination() // wait for the computation to terminate
 
   }
 
