@@ -10,7 +10,8 @@ import java.util.Random
 
 object DistributedRandomSamplingFixedReservoir {
   //FIXME overflow may happen, if the stream is very big!
-  var globalCount: Long = 0
+  var globalCount: Long = 1
+  var reservoirSize = 10
 
   def main(args: Array[String]) {
     Logger.getLogger("org").setLevel(Level.OFF) //disable logging
@@ -23,18 +24,27 @@ object DistributedRandomSamplingFixedReservoir {
     val conf = new SparkConf().setMaster("local[2]").setAppName("DistributedRandomSampling")
     val ssc = new StreamingContext(conf, Seconds(10)) // batch interval duration FIXME set from runtime arguments
 
-    val randomGenerator = new Random
-
 
     //DStream receiving from localhost:9999
     //FIXME set input source via SDMiner GUI
 
     val stream = ssc.socketTextStream("localhost", 9999)
-
+    //FIXME zipWithIndex or zipWithUniqueId ?
     val indexedStream = stream.transform(rdd => rdd.zipWithUniqueId().mapValues( id => id + globalCount))
+    //    indexedStream.filter(element => element._2 % 5 == 0 )
+    //      indexedStream.transform(rdd => rdd.filter(element => element._2 % 5 == 0)).print()
+//    indexedStream.transform(rdd => rdd.map(element => (new Random()).nextFloat())).print()
+//        indexedStream.saveAsTextFiles("/home/sinash/elements.txt")
 
-    indexedStream.print()
-    indexedStream.foreachRDD{(rdd => globalCount += rdd.count())}
+    val filteredDStream = indexedStream.filter(element => (reservoirSize.toFloat/((element._2).toFloat)) > (new Random()).nextFloat())
+//val tripletDStream = indexedStream.map(element => new Triplet(element._1, element._2, (new Random()).nextFloat()))
+//    val filteredDStream = indexedStream.filter(element => element._2 % 5 == 0 )
+//val filteredDStream = tripletDStream.filter(element => (reservoirSize.toFloat/((element.value).toFloat)) < (new Random()).nextFloat())
+//    val filteredDStream = tripletDStream.map(element => element.index)
+      filteredDStream.saveAsTextFiles("/home/sinash/sparktest/elements.txt")
+    indexedStream.foreachRDD{(rdd => globalCount += rdd.count())} //is it safe to use indexedStream again?
+
+
 
 
 

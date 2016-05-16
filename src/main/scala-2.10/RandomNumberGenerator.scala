@@ -28,7 +28,7 @@ object RandomNumberGenerator {
           val out = new PrintWriter(socket.getOutputStream(), true)
 
           while(true){
-            Thread.sleep(1000)
+            Thread.sleep(1)
             val num = random.nextInt(10)
             out.print(num)
             out.write("\n")
