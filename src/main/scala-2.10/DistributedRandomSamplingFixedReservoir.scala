@@ -36,22 +36,26 @@ object DistributedRandomSamplingFixedReservoir {
     val indexedDStream = stream.transform(rdd => rdd.zipWithUniqueId().mapValues( id => id + globalCount))
     //    indexedDStream.filter(element => element._2 % 5 == 0 )
     //      indexedDStream.transform(rdd => rdd.filter(element => element._2 % 5 == 0)).print()
-//    indexedDStream.transform(rdd => rdd.map(element => (new Random()).nextFloat())).print()
-//        indexedDStream.saveAsTextFiles("/home/sinash/elements.txt")
+    //    indexedDStream.transform(rdd => rdd.map(element => (new Random()).nextFloat())).print()
+    //        indexedDStream.saveAsTextFiles("/home/sinash/elements.txt")
 
     val filteredDStream = indexedDStream.filter(element => (reservoirSize.toFloat/((element._2).toFloat)) > (new Random()).nextFloat())
-//val tripletDStream = indexedDStream.map(element => new Triplet(element._1, element._2, (new Random()).nextFloat()))
-//    val filteredDStream = indexedDStream.filter(element => element._2 % 5 == 0 )
-//val filteredDStream = tripletDStream.filter(element => (reservoirSize.toFloat/((element.value).toFloat)) < (new Random()).nextFloat())
-//    val filteredDStream = tripletDStream.map(element => element.index)
-//    var updateSet = new ArrayBuffer[Unit]()
+    //val tripletDStream = indexedDStream.map(element => new Triplet(element._1, element._2, (new Random()).nextFloat()))
+    //    val filteredDStream = indexedDStream.filter(element => element._2 % 5 == 0 )
+    //val filteredDStream = tripletDStream.filter(element => (reservoirSize.toFloat/((element.value).toFloat)) < (new Random()).nextFloat())
+    //    val filteredDStream = tripletDStream.map(element => element.index)
+    //    var updateSet = new ArrayBuffer[Unit]()
     filteredDStream.foreachRDD(rdd => {
       val updateSet = rdd.collect()
-      val sortedUpdateSet = updateSet.sortWith(_._2 < _._2).foreach(element => println(element))
-//      updateSet.foreach(element => println(element))
+      //      val sortedUpdateSet = updateSet.sortWith(_._2 < _._2).foreach(element => println(element))
+      val sortedUpdateSet = updateSet.sortWith(_._2 < _._2)
+      sortedUpdateSet.foreach(element => {
+        println(element)
+      })
+      //      updateSet.foreach(element => println(element))
     })
 
-//      filteredDStream.saveAsTextFiles("/home/sinash/sparktest/elements.txt") //FIXME runtime argument - HDFS
+    //      filteredDStream.saveAsTextFiles("/home/sinash/sparktest/elements.txt") //FIXME runtime argument - HDFS
     indexedDStream.foreachRDD{(rdd => globalCount += rdd.count())} //is it safe to use indexedDStream again?
 
 
