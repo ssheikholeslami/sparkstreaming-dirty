@@ -1,5 +1,6 @@
 /**
   * Created by sinash on 5/14/16.
+  * Distributed version of "Random Sampling With a Fixed Reservoir (Vitter)"
   */
 
 import org.apache.spark._
@@ -7,6 +8,8 @@ import org.apache.spark.streaming._
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
 import java.util.Random
+
+import scala.collection.mutable.ArrayBuffer
 
 object DistributedRandomSamplingFixedReservoir {
   //FIXME overflow may happen, if the stream is very big!
@@ -30,19 +33,27 @@ object DistributedRandomSamplingFixedReservoir {
 
     val stream = ssc.socketTextStream("localhost", 9999)
     //FIXME zipWithIndex or zipWithUniqueId ?
-    val indexedStream = stream.transform(rdd => rdd.zipWithUniqueId().mapValues( id => id + globalCount))
-    //    indexedStream.filter(element => element._2 % 5 == 0 )
-    //      indexedStream.transform(rdd => rdd.filter(element => element._2 % 5 == 0)).print()
-//    indexedStream.transform(rdd => rdd.map(element => (new Random()).nextFloat())).print()
-//        indexedStream.saveAsTextFiles("/home/sinash/elements.txt")
+    val indexedDStream = stream.transform(rdd => rdd.zipWithUniqueId().mapValues( id => id + globalCount))
+    //    indexedDStream.filter(element => element._2 % 5 == 0 )
+    //      indexedDStream.transform(rdd => rdd.filter(element => element._2 % 5 == 0)).print()
+//    indexedDStream.transform(rdd => rdd.map(element => (new Random()).nextFloat())).print()
+//        indexedDStream.saveAsTextFiles("/home/sinash/elements.txt")
 
-    val filteredDStream = indexedStream.filter(element => (reservoirSize.toFloat/((element._2).toFloat)) > (new Random()).nextFloat())
-//val tripletDStream = indexedStream.map(element => new Triplet(element._1, element._2, (new Random()).nextFloat()))
-//    val filteredDStream = indexedStream.filter(element => element._2 % 5 == 0 )
+    val filteredDStream = indexedDStream.filter(element => (reservoirSize.toFloat/((element._2).toFloat)) > (new Random()).nextFloat())
+//val tripletDStream = indexedDStream.map(element => new Triplet(element._1, element._2, (new Random()).nextFloat()))
+//    val filteredDStream = indexedDStream.filter(element => element._2 % 5 == 0 )
 //val filteredDStream = tripletDStream.filter(element => (reservoirSize.toFloat/((element.value).toFloat)) < (new Random()).nextFloat())
 //    val filteredDStream = tripletDStream.map(element => element.index)
-      filteredDStream.saveAsTextFiles("/home/sinash/sparktest/elements.txt")
-    indexedStream.foreachRDD{(rdd => globalCount += rdd.count())} //is it safe to use indexedStream again?
+//    var updateSet = new ArrayBuffer[Unit]()
+    filteredDStream.foreachRDD(rdd => {
+      val updateSet = rdd.collect()
+      val sortedUpdateSet = updateSet.sortWith(_._2 < _._2).foreach(element => println(element))
+//      updateSet.foreach(element => println(element))
+    })
+
+//      filteredDStream.saveAsTextFiles("/home/sinash/sparktest/elements.txt") //FIXME runtime argument - HDFS
+    indexedDStream.foreachRDD{(rdd => globalCount += rdd.count())} //is it safe to use indexedDStream again?
+
 
 
 
