@@ -14,10 +14,22 @@ import scala.collection.mutable.ArrayBuffer
 object DistributedRandomSamplingFixedReservoir {
   //FIXME overflow may happen, if the stream is very big!
   var globalCount: Long = 1
-  var reservoirSize = 10
+  var reservoirSize = 10 //FIXME runtime argument!
+  var sampleSet = new Array[Long](reservoirSize)
+
+//  var sampleSet: Array[(String, Long)] =
+
+  //  var sampleSet = new Array[Unit](reservoirSize)
+
+
 
   def main(args: Array[String]) {
+
     Logger.getLogger("org").setLevel(Level.OFF) //disable logging
+
+
+
+//    sampleSet.update(4, 5)
 
 
     // at least 2 cores to prevent starvation (1 core for each stream source, and at least one worker)
@@ -45,15 +57,45 @@ object DistributedRandomSamplingFixedReservoir {
     //val filteredDStream = tripletDStream.filter(element => (reservoirSize.toFloat/((element.value).toFloat)) < (new Random()).nextFloat())
     //    val filteredDStream = tripletDStream.map(element => element.index)
     //    var updateSet = new ArrayBuffer[Unit]()
+
+
+//    Array[(String, Long)] arr
+
+    //nimche working
+    /*
+    var arr: Array[(String, Long)] = null
+    filteredDStream.foreachRDD(rdd => {
+
+      arr = rdd.collect()
+    })
+
+//    println("PRINT: " + arr.mkString("  "))
+
+    filteredDStream.foreachRDD(rdd=> {
+
+//      println("PRINTFOREACH: " + arr.mkString("  "))
+      print("ID" + stream)
+
+    })
+*/
+
     filteredDStream.foreachRDD(rdd => {
       val updateSet = rdd.collect()
-      //      val sortedUpdateSet = updateSet.sortWith(_._2 < _._2).foreach(element => println(element))
       val sortedUpdateSet = updateSet.sortWith(_._2 < _._2)
+      //update the sample
       sortedUpdateSet.foreach(element => {
+
+        val replaceIndex = (new Random()).nextInt(10)
+        sampleSet.update(replaceIndex, (element._1).toLong)
+
         println(element)
+        println("UPDATED")
       })
+
+
+
       //      updateSet.foreach(element => println(element))
-    })
+      println("Current Sample: " + sampleSet.mkString(" "))    })
 
     //      filteredDStream.saveAsTextFiles("/home/sinash/sparktest/elements.txt") //FIXME runtime argument - HDFS
     indexedDStream.foreachRDD{(rdd => globalCount += rdd.count())} //is it safe to use indexedDStream again?
