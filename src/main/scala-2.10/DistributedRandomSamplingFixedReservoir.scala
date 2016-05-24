@@ -22,7 +22,9 @@ object DistributedRandomSamplingFixedReservoir {
 
     //FIXME set cores from runtime arguments
     //FIXME set master address from runtime arguments
-    val conf = new SparkConf().setMaster("local[2]").setAppName("DistributedRandomSampling")
+//    val conf = new SparkConf().setMaster("local[2]").setAppName("DistributedRandomSampling")
+
+    val conf = new SparkConf().setAppName("DistributedRandomSampling")
     val ssc = new StreamingContext(conf, Seconds(10)) // batch interval duration FIXME set from runtime arguments
 
 
