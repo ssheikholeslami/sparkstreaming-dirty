@@ -35,6 +35,7 @@ object IntervalPrinter {
 
       println("Batch " + intervalCount + " contents: ")
       rdd.foreach(element => {
+
         println(element)
         elementCount = elementCount + 1
       })
